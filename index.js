@@ -53,6 +53,62 @@ async function run() {
       const result = await postCollection.deleteOne(filter);
       res.send(result);
     });
+
+    //put method for like post
+
+    app.put("/likepost/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      const filter = { _id: new ObjectId(id) };
+
+      console.log(body);
+      const existingLikes = await postCollection.findOne(filter);
+
+      const likeExited = existingLikes.like.find(
+        (likeEmail) => likeEmail.email === body.email
+      );
+      console.log(likeExited);
+
+      if (likeExited) {
+        console.log("Like Removed");
+        // if exist then remove the like
+        const removedlike = existingLikes.like.filter(
+          (like) => like.email !== body.email
+        );
+
+        console.log(removedlike);
+        const updateDoc = {
+          $set: {
+            like: [...removedlike],
+          },
+        };
+
+        const option = { upsert: true };
+        const result = await postCollection.updateOne(
+          filter,
+          updateDoc,
+          option
+        );
+        res.send(result);
+
+        return;
+      } else {
+        console.log("Like Added");
+        const updateDoc = {
+          $set: {
+            like: [...existingLikes.like, body],
+          },
+        };
+        const option = { upsert: true };
+        const result = await postCollection.updateOne(
+          filter,
+          updateDoc,
+          option
+        );
+        res.send(result);
+        return;
+      }
+    });
   } finally {
   }
 }
